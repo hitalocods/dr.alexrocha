@@ -1,9 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
 import { Service, ClinicSettings, BusinessDayHours } from '@/lib/types';
-import { Lock } from 'lucide-react';
 
 export default function BookingPage() {
   const [step, setStep] = useState<string | number>('hero');
@@ -286,8 +284,19 @@ export default function BookingPage() {
 
       {/* Cabeçalho */}
       <header className="text-center pt-6 pb-2 px-6">
-        <div className="font-space font-bold text-2xl md:text-3xl text-[#0d1f23]">
-          Dr. Alex Rocha<span className="text-[#e8a33d]">.</span>
+        <div className="flex items-center justify-center gap-2.5">
+          {step !== 'hero' && (
+            <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-[#e8a33d]/60 shadow-sm shrink-0">
+              <img
+                src="/alex.jpeg"
+                alt="Dr. Alex Rocha"
+                className="w-full h-full object-cover object-top"
+              />
+            </div>
+          )}
+          <div className="font-space font-bold text-2xl md:text-3xl text-[#0d1f23]">
+            Dr. Alex Rocha<span className="text-[#e8a33d]">.</span>
+          </div>
         </div>
         <div className="mt-1 text-[11.5px] tracking-[0.18em] uppercase text-[#5a636a] font-semibold">
           Quiropraxia · Osteopatia · Alleanza Clinic
@@ -295,7 +304,7 @@ export default function BookingPage() {
       </header>
 
       {/* Conteúdo Principal */}
-      <main className="max-w-[640px] w-full mx-auto px-6 py-6 flex-1">
+      <main className={`w-full mx-auto px-4 sm:px-6 py-4 sm:py-6 flex-1 transition-all duration-300 ${step === 'hero' ? 'max-w-4xl' : 'max-w-[640px]'}`}>
         {loading ? (
           <div className="text-center py-20 animate-pulse text-[#5a636a]">
             <div className="w-8 h-8 border-3 border-[#e8a33d] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
@@ -310,33 +319,90 @@ export default function BookingPage() {
               </div>
             )}
 
-            {/* ETAPA HERO */}
+            {/* ETAPA HERO: LAYOUT LADO A LADO COM FOTO INTEGRAL */}
             {step === 'hero' && (
-              <section className="animate-fade text-center py-6">
-                <h1 className="font-space font-bold text-3xl sm:text-4xl md:text-5xl leading-tight text-[#0d1f23]">
-                  Alinhe sua <em className="not-italic text-[#e8a33d]">agenda</em>,<br />
-                  alinhe seu corpo.
-                </h1>
-                <p className="mt-4 max-w-[420px] mx-auto text-[#5a636a] text-base leading-relaxed">
-                  Agende sua avaliação ou sessão em poucos toques — sem espera e direto pelo WhatsApp.
-                </p>
+              <section className="animate-fade py-2 sm:py-6">
+                <div className="bg-[#fffdf9]/80 backdrop-blur-md border border-[#e2ded4] rounded-3xl p-6 sm:p-8 md:p-10 shadow-sm">
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+                    
+                    {/* Coluna da Foto do Profissional (Destaque Integral / Retrato) */}
+                    <div className="md:col-span-5 flex flex-col items-center justify-center order-1 md:order-1">
+                      <div className="relative group w-full max-w-[260px] sm:max-w-[280px]">
+                        {/* Brilho suave de contorno */}
+                        <div className="absolute -inset-2 bg-gradient-to-tr from-[#e8a33d]/40 via-[#2d4a53]/20 to-[#e8a33d]/30 rounded-3xl blur-md group-hover:blur-lg transition-all duration-500" />
+                        
+                        {/* Container da Foto */}
+                        <div className="relative aspect-[3/4] w-full rounded-2xl overflow-hidden border-2 border-white shadow-xl bg-[#0d1f23]/5">
+                          <img
+                            src="/alex.jpeg"
+                            alt="Dr. Alex Rocha"
+                            className="w-full h-full object-cover object-top sm:object-center transform group-hover:scale-105 transition-transform duration-700 ease-out"
+                          />
+                          {/* Gradiente de leitura na base */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-[#0d1f23]/85 via-[#0d1f23]/20 to-transparent" />
+                          
+                          {/* Informações sobrepostas na imagem */}
+                          <div className="absolute bottom-3.5 left-3.5 right-3.5 text-left text-white">
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">Agenda Aberta</span>
+                            </div>
+                            <div className="font-space font-bold text-lg text-[#fffdf9] leading-tight">
+                              Dr. Alex Rocha
+                            </div>
+                            <div className="text-[11.5px] text-[#e8a33d] font-semibold">
+                              Quiropraxia · Osteopatia
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
 
-                <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center items-center">
-                  <button
-                    onClick={() => goTo(0)}
-                    className="w-full sm:w-auto px-8 py-4 rounded-full bg-[#0d1f23] text-[#f2f0ea] font-bold text-sm hover:bg-[#132e35] transition-all transform hover:-translate-y-0.5 shadow-premium cursor-pointer"
-                  >
-                    Agendar meu horário
-                  </button>
-                </div>
+                    {/* Coluna de Texto e Ações (Lado a Lado) */}
+                    <div className="md:col-span-7 flex flex-col items-center md:items-start text-center md:text-left order-2 md:order-2">
+                      <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#0d1f23]/5 border border-[#0d1f23]/10 text-[#0d1f23] text-xs font-semibold mb-3">
+                        <span className="text-[#e8a33d] font-bold">✦</span> Atendimento Alleanza Clinic
+                      </div>
 
-                <div className="mt-4 flex gap-2 justify-center">
-                  <button
-                    onClick={() => setModalLocation(true)}
-                    className="px-5 py-2.5 rounded-full border border-line text-xs font-semibold text-[#0d1f23] hover:bg-black/5 transition cursor-pointer"
-                  >
-                    Como chegar
-                  </button>
+                      <h1 className="font-space font-bold text-2xl sm:text-3xl lg:text-[38px] leading-tight text-[#0d1f23]">
+                        Alinhe sua <em className="not-italic text-[#e8a33d]">agenda</em>,<br />
+                        alinhe seu corpo.
+                      </h1>
+
+                      <p className="mt-3 text-[#5a636a] text-sm sm:text-base leading-relaxed max-w-[460px]">
+                        Cuidado especializado para alívio de dores, postura e mobilidade. Agende sua sessão em poucos toques e sem tempo de espera.
+                      </p>
+
+                      {/* Destaques rápidos */}
+                      <div className="mt-5 grid grid-cols-2 gap-2.5 w-full max-w-[420px] text-xs text-[#2d4a53] font-medium">
+                        <div className="flex items-center gap-2 bg-[#f2f0ea]/80 p-2.5 rounded-xl border border-[#e2ded4] text-left">
+                          <span className="text-[#e8a33d] font-bold">✓</span> Confirmação no WhatsApp
+                        </div>
+                        <div className="flex items-center gap-2 bg-[#f2f0ea]/80 p-2.5 rounded-xl border border-[#e2ded4] text-left">
+                          <span className="text-[#e8a33d] font-bold">✓</span> Horários em tempo real
+                        </div>
+                      </div>
+
+                      {/* Botões de Ação */}
+                      <div className="mt-6 flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                        <button
+                          onClick={() => goTo(0)}
+                          className="w-full sm:w-auto px-8 py-4 rounded-full bg-[#0d1f23] text-[#f2f0ea] font-bold text-sm hover:bg-[#132e35] transition-all transform hover:-translate-y-0.5 shadow-premium cursor-pointer flex items-center justify-center gap-2"
+                        >
+                          <span>Agendar meu horário</span>
+                          <span className="text-[#e8a33d] text-base">→</span>
+                        </button>
+
+                        <button
+                          onClick={() => setModalLocation(true)}
+                          className="w-full sm:w-auto px-6 py-3.5 rounded-full border border-line bg-white/70 hover:bg-white text-xs sm:text-sm font-semibold text-[#0d1f23] transition cursor-pointer flex items-center justify-center gap-1.5"
+                        >
+                          <span>📍 Ver localização</span>
+                        </button>
+                      </div>
+                    </div>
+
+                  </div>
                 </div>
               </section>
             )}
@@ -755,12 +821,18 @@ export default function BookingPage() {
           </a>{' '}
           · (86) 9 8866-4485
         </div>
-        <div className="mt-4 text-[11px] opacity-70 flex items-center justify-center gap-4">
-          <span>Desenvolvido por Atlas Software</span>
-          <span>·</span>
-          <Link href="/admin" className="text-[#0d1f23] font-semibold hover:text-[#e8a33d] flex items-center gap-1">
-            <Lock className="w-3 h-3" /> Painel Admin
-          </Link>
+        <div className="mt-4 text-[11px] opacity-75 flex items-center justify-center">
+          <span>
+            Desenvolvido por{' '}
+            <a
+              href="https://www.instagram.com/atlassoftware_/"
+              target="_blank"
+              rel="noreferrer"
+              className="font-bold text-[#0d1f23] hover:text-[#e8a33d] transition underline decoration-[#e8a33d]/40 underline-offset-2"
+            >
+              Atlas Software
+            </a>
+          </span>
         </div>
       </footer>
 
