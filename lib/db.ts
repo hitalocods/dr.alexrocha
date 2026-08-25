@@ -766,10 +766,19 @@ export const db = {
       const rows = await sql`SELECT * FROM settings`;
       const result: any = { ...mockState.settings };
       for (const row of rows) {
-        result[row.key] = typeof row.value === 'string' ? JSON.parse(row.value) : row.value;
+        let val = row.value;
+        if (typeof val === 'string') {
+          try {
+            val = JSON.parse(val);
+          } catch {
+            // Mantém a string original caso não seja JSON
+          }
+        }
+        result[row.key] = val;
       }
       return result;
     } catch (e) {
+      console.warn('Erro ao ler settings:', e);
       return { ...mockState.settings };
     }
   },
