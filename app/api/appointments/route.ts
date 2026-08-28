@@ -41,7 +41,7 @@ export async function POST(request: Request) {
       const created = await db.createAppointment({
         client_name: body.client_name,
         client_phone: body.client_phone,
-        notes: body.notes || '',
+        notes: body.notes || body.client_notes || '',
         service_id: body.service_id || '',
         date: body.date,
         time: body.time,

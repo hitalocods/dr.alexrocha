@@ -342,11 +342,10 @@ export default function AgendaPage() {
                       R$ {Number(apt.price_charged).toFixed(2).replace('.', ',')}
                     </span>
                     <span
-                      className={`px-2 py-0.5 rounded-lg text-[10px] font-bold ${
-                        apt.is_paid
+                      className={`px-2 py-0.5 rounded-lg text-[10px] font-bold ${apt.is_paid
                           ? 'bg-emerald-100 text-emerald-700'
                           : 'bg-amber-100 text-amber-700'
-                      }`}
+                        }`}
                     >
                       {apt.is_paid ? 'Pago' : 'Pagamento Pendente'}
                     </span>

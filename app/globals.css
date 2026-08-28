@@ -70,3 +70,9 @@ body {
 .animate-fade {
   animation: fadeIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
+
+/* Prevenir zoom automático no mobile ao focar em inputs */
+input, select, textarea {
+  font-size: 16px !important;
+  touch-action: manipulation;
+}
