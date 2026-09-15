@@ -43,25 +43,54 @@ export default function AgendaPage() {
   const [formNotes, setFormNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Carregar dados
-  const loadAppointments = async (date: string) => {
-    setLoading(true);
+  // Carregar lista de serviços apenas uma vez na montagem
+  useEffect(() => {
+    fetch('/api/services')
+      .then((r) => r.json())
+      .then((resSvc) => {
+        if (Array.isArray(resSvc)) setServices(resSvc);
+      })
+      .catch((err) => console.error('Erro ao carregar serviços:', err));
+  }, []);
+
+  // Carregar dados de agendamentos da data
+  const loadAppointments = async (date: string, silent = false) => {
+    if (!silent) setLoading(true);
     try {
-      const [resApt, resSvc] = await Promise.all([
-        fetch(`/api/appointments?from=${date}&to=${date}`).then((r) => r.json()),
-        fetch('/api/services').then((r) => r.json()),
-      ]);
+      const resApt = await fetch(`/api/appointments?from=${date}&to=${date}`).then((r) => r.json());
       if (Array.isArray(resApt)) setAppointments(resApt);
-      if (Array.isArray(resSvc)) setServices(resSvc);
     } catch (err) {
       console.error('Erro ao carregar agendamentos:', err);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
   useEffect(() => {
+    // Carregamento inicial da data selecionada
     loadAppointments(selectedDate);
+
+    // Polling inteligente e econômico (60s) apenas se a aba estiver visível
+    const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        loadAppointments(selectedDate, true);
+      }
+    }, 60000);
+
+    // Proteção de aba minimizada / tela bloqueada:
+    // Ao reabrir a aba, sincroniza imediatamente 1 vez
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadAppointments(selectedDate, true);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [selectedDate]);
 
   // Ações Rápidas

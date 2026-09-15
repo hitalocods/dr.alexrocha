@@ -9,22 +9,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'E-mail e senha são obrigatórios' }, { status: 400 });
     }
 
-    const isValid = validateCredentials(email, password);
-    if (!isValid) {
+    const authResult = validateCredentials(email, password);
+    if (!authResult.valid || !authResult.user) {
       return NextResponse.json({ error: 'Credenciais inválidas. Verifique seu e-mail e senha.' }, { status: 401 });
     }
 
-    const payload = {
-      email,
-      name: 'Dr. Alex Rocha',
-      role: 'admin' as const,
-    };
-
+    const payload = authResult.user;
     const token = signToken(payload);
 
     const response = NextResponse.json({
       success: true,
       user: payload,
+      contingency: authResult.contingency || false,
     });
 
     response.cookies.set('admin_token', token, {
@@ -37,6 +33,6 @@ export async function POST(request: Request) {
 
     return response;
   } catch (error: any) {
-    return NextResponse.json({ error: 'Erro ao processar login: ' + error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Erro ao processar login: ' + (error?.message || 'Falha de comunicação') }, { status: 500 });
   }
 }

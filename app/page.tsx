@@ -92,14 +92,31 @@ export default function BookingPage() {
 
   useEffect(() => {
     if (!selectedDate) return;
+
+    // Consulta inicial ao selecionar a data
     fetchBookedSlots(selectedDate);
 
-    // Polling inteligente a cada 8 segundos caso outro paciente esteja agendando no mesmo momento
+    // Polling otimizado para não sobrecarregar o Neon (60 segundos)
+    // As requisições automáticas só acontecem se a aba/tela estiver visível
     const interval = setInterval(() => {
-      fetchBookedSlots(selectedDate);
-    }, 8000);
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        fetchBookedSlots(selectedDate);
+      }
+    }, 60000);
 
-    return () => clearInterval(interval);
+    // Proteção de aba/tela bloqueada: sincroniza imediatamente 1 vez ao voltar
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchBookedSlots(selectedDate);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [selectedDate, fetchBookedSlots]);
 
   const chosenService = services.find((s) => s.id === selectedService);
@@ -110,10 +127,9 @@ export default function BookingPage() {
     setStep(s);
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    // Atualizar dados ao avançar de etapa
-    if (s === 1 || s === 2) {
-      loadFreshData();
-      if (selectedDate) fetchBookedSlots(selectedDate);
+    // Atualizar slots ocupados ao avançar para a seleção de horário (passo 2)
+    if (s === 2 && selectedDate) {
+      fetchBookedSlots(selectedDate);
     }
   };
 

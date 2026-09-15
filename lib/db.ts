@@ -247,10 +247,64 @@ export async function initializeDatabase() {
   }
 }
 
+// Controle de inicialização eficiente para evitar reexecutar DDLs no Neon
+let dbInitPromise: Promise<void> | null = null;
+
 async function ensureDbInit() {
-  if (!isDbInitialized && getSql()) {
-    await initializeDatabase();
+  if (isDbInitialized) return;
+  const sql = getSql();
+  if (!sql) return;
+
+  if (!dbInitPromise) {
+    dbInitPromise = (async () => {
+      try {
+        // Checagem rápida de existência de tabela sem disparar 15 DDLs a cada cold start
+        const check = await sql`
+          SELECT 1 FROM information_schema.tables 
+          WHERE table_name = 'services' LIMIT 1
+        `;
+        if (check.length > 0) {
+          isDbInitialized = true;
+          return;
+        }
+        await initializeDatabase();
+      } catch (err) {
+        console.error('Erro na checagem rápida do banco:', err);
+      } finally {
+        isDbInitialized = true;
+      }
+    })();
   }
+  await dbInitPromise;
+}
+
+// Cache inteligente em memória para consultas estáticas frequentes (TTL de 60s)
+interface CacheEntry<T> {
+  data: T;
+  expiry: number;
+}
+
+const memoryCache = {
+  services: null as CacheEntry<Service[]> | null,
+  settings: null as CacheEntry<ClinicSettings> | null,
+  businessHours: null as CacheEntry<BusinessDayHours[]> | null,
+  blockedDates: null as CacheEntry<BlockedDate[]> | null,
+};
+
+const CACHE_TTL_MS = 60 * 1000; // 60 segundos
+
+function getCached<T>(entry: CacheEntry<T> | null): T | null {
+  if (entry && Date.now() < entry.expiry) {
+    return entry.data;
+  }
+  return null;
+}
+
+function setCached<T>(data: T): CacheEntry<T> {
+  return {
+    data,
+    expiry: Date.now() + CACHE_TTL_MS,
+  };
 }
 
 // Helpers de Acesso a Dados
@@ -324,14 +378,17 @@ export const db = {
     return merged;
   },
 
-  // SERVIÇOS
+  // SERVIÇOS (com cache em memória para blindar o Neon)
   async getServices(): Promise<Service[]> {
+    const cached = getCached(memoryCache.services);
+    if (cached) return cached;
+
     await ensureDbInit();
     const sql = getSql();
     if (!sql) return [...mockState.services].sort((a, b) => a.order_num - b.order_num);
     try {
       const rows = await sql`SELECT * FROM services ORDER BY order_num ASC, name ASC`;
-      return rows.map((r: any) => ({
+      const mapped = rows.map((r: any) => ({
         id: r.id,
         name: r.name,
         description: r.description,
@@ -342,6 +399,8 @@ export const db = {
         order_num: r.order_num,
         created_at: r.created_at,
       }));
+      memoryCache.services = setCached(mapped);
+      return mapped;
     } catch (e) {
       console.warn('Erro ao consultar services no Neon:', e);
       return [...mockState.services];
@@ -349,6 +408,7 @@ export const db = {
   },
 
   async createService(svc: Omit<Service, 'created_at'>): Promise<Service> {
+    memoryCache.services = null; // Invalida o cache
     await ensureDbInit();
     const sql = getSql();
     const newService: Service = {
@@ -368,6 +428,7 @@ export const db = {
   },
 
   async updateService(id: string, updates: Partial<Service>): Promise<Service | null> {
+    memoryCache.services = null; // Invalida o cache
     await ensureDbInit();
     const sql = getSql();
     if (!sql) {
@@ -400,6 +461,7 @@ export const db = {
   },
 
   async deleteService(id: string): Promise<boolean> {
+    memoryCache.services = null; // Invalida o cache
     await ensureDbInit();
     const sql = getSql();
     if (!sql) {
@@ -663,25 +725,31 @@ export const db = {
     return true;
   },
 
-  // DATAS BLOQUEADAS
+  // DATAS BLOQUEADAS (com cache em memória)
   async getBlockedDates(): Promise<BlockedDate[]> {
+    const cached = getCached(memoryCache.blockedDates);
+    if (cached) return cached;
+
     await ensureDbInit();
     const sql = getSql();
     if (!sql) return [...mockState.blocked_dates];
     try {
       const rows = await sql`SELECT * FROM blocked_dates ORDER BY date ASC`;
-      return rows.map((r: any) => ({
+      const mapped = rows.map((r: any) => ({
         id: r.id,
         date: typeof r.date === 'string' ? r.date.slice(0, 10) : new Date(r.date).toISOString().slice(0, 10),
         reason: r.reason,
         created_at: r.created_at,
       }));
+      memoryCache.blockedDates = setCached(mapped);
+      return mapped;
     } catch (e) {
       return [...mockState.blocked_dates];
     }
   },
 
   async toggleBlockedDate(date: string, reason?: string): Promise<{ blocked: boolean }> {
+    memoryCache.blockedDates = null; // Invalida o cache
     await ensureDbInit();
     const sql = getSql();
     if (!sql) {
@@ -706,25 +774,31 @@ export const db = {
     }
   },
 
-  // DIAS DA SEMANA E HORÁRIOS
+  // DIAS DA SEMANA E HORÁRIOS (com cache em memória)
   async getBusinessHours(): Promise<BusinessDayHours[]> {
+    const cached = getCached(memoryCache.businessHours);
+    if (cached) return cached;
+
     await ensureDbInit();
     const sql = getSql();
     if (!sql) return [...mockState.business_hours];
     try {
       const rows = await sql`SELECT * FROM business_hours ORDER BY day_of_week ASC`;
-      return rows.map((r: any) => ({
+      const mapped = rows.map((r: any) => ({
         day_of_week: r.day_of_week,
         day_name: r.day_name,
         is_working: r.is_working,
         slots: typeof r.slots === 'string' ? JSON.parse(r.slots) : (r.slots || []),
       }));
+      memoryCache.businessHours = setCached(mapped);
+      return mapped;
     } catch (e) {
       return [...mockState.business_hours];
     }
   },
 
   async updateBusinessDay(day_of_week: number, is_working: boolean, slots: string[]): Promise<BusinessDayHours> {
+    memoryCache.businessHours = null; // Invalida o cache
     const dayNames = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
     await ensureDbInit();
     const sql = getSql();
@@ -757,8 +831,11 @@ export const db = {
     };
   },
 
-  // CONFIGURAÇÕES GERAIS
+  // CONFIGURAÇÕES GERAIS (com cache em memória)
   async getSettings(): Promise<ClinicSettings> {
+    const cached = getCached(memoryCache.settings);
+    if (cached) return cached;
+
     await ensureDbInit();
     const sql = getSql();
     if (!sql) return { ...mockState.settings };
@@ -776,6 +853,7 @@ export const db = {
         }
         result[row.key] = val;
       }
+      memoryCache.settings = setCached(result);
       return result;
     } catch (e) {
       console.warn('Erro ao ler settings:', e);
@@ -784,6 +862,7 @@ export const db = {
   },
 
   async updateSetting(key: keyof ClinicSettings, value: any): Promise<void> {
+    memoryCache.settings = null; // Invalida o cache
     await ensureDbInit();
     const sql = getSql();
     if (!sql) {
