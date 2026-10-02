@@ -131,7 +131,7 @@ export const asaasService = {
           cpfCnpj: '00000000000',
           postalCode: '64000000',
           addressNumber: '100',
-          phone: '86988664485',
+          phone: '86988003223',
         },
       });
 

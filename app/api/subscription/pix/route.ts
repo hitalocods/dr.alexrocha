@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     const customer = await asaasService.getOrCreateCustomer(
       'Dr. Alex Rocha',
       'admin@dralexrocha.com.br',
-      '86988664485'
+      '86988003223'
     );
 
     const customerId = customer?.id || 'cus_dralex_atlas';

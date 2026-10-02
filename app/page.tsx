@@ -10,7 +10,7 @@ export default function BookingPage() {
   const [settings, setSettings] = useState<ClinicSettings>({
     show_prices_publicly: false,
     clinic_name: 'Dr. Alex Rocha',
-    clinic_phone: '5586988664485',
+    clinic_phone: '5586988003223',
     clinic_address: 'Alleanza Clinic — Teresina-PI',
     default_slots: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'],
   });
@@ -211,13 +211,13 @@ export default function BookingPage() {
       (priceText ? `${priceText}\n` : '') +
       `\nAguardo a confirmação. Obrigado(a)!`;
 
-    const rawPhone = settings?.clinic_phone ?? '5586988664485';
+    const rawPhone = settings?.clinic_phone ?? '5586988003223';
     let cleanPhone = String(rawPhone).replace(/\D/g, '');
     if (cleanPhone.length === 10 || cleanPhone.length === 11) {
       cleanPhone = '55' + cleanPhone;
     }
     if (!cleanPhone) {
-      cleanPhone = '5586988664485';
+      cleanPhone = '5586988003223';
     }
 
     return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(plainMsg)}`;

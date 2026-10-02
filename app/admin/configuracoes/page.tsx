@@ -15,7 +15,7 @@ export default function ConfiguracoesPage() {
   const [settings, setSettings] = useState<ClinicSettings>({
     show_prices_publicly: false,
     clinic_name: 'Dr. Alex Rocha',
-    clinic_phone: '5586988664485',
+    clinic_phone: '5586988003223',
     clinic_address: 'Alleanza Clinic — Teresina-PI',
     default_slots: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'],
   });
@@ -141,7 +141,7 @@ export default function ConfiguracoesPage() {
                 required
                 value={settings.clinic_phone}
                 onChange={(e) => setSettings({ ...settings, clinic_phone: e.target.value })}
-                placeholder="Ex: 5586988664485"
+                placeholder="Ex: 5586988003223"
                 className="w-full bg-transparent text-sm font-semibold outline-none text-[#0d1f23]"
               />
             </div>

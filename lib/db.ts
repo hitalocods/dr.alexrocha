@@ -47,7 +47,7 @@ const mockState = {
   settings: {
     show_prices_publicly: false,
     clinic_name: 'Dr. Alex Rocha · Quiropraxia & Osteopatia',
-    clinic_phone: '5586988664485',
+    clinic_phone: '5586988003223',
     clinic_address: 'Alleanza Clinic — Teresina-PI',
     default_slots: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'],
   } as ClinicSettings,
@@ -214,7 +214,7 @@ export async function initializeDatabase() {
         VALUES 
           ('show_prices_publicly', 'false'::jsonb),
           ('clinic_name', '"Dr. Alex Rocha - Alleanza Clinic"'::jsonb),
-          ('clinic_phone', '"5586988664485"'::jsonb),
+          ('clinic_phone', '"5586988003223"'::jsonb),
           ('clinic_address', '"Alleanza Clinic — Teresina-PI"'::jsonb),
           ('default_slots', '["08:00", "09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "17:00"]'::jsonb)
         ON CONFLICT (key) DO NOTHING;

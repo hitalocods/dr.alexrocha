@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     const customer = await asaasService.getOrCreateCustomer(
       holderName,
       'admin@dralexrocha.com.br',
-      '86988664485'
+      '86988003223'
     );
 
     // 2. Criar assinatura de cartão no Asaas

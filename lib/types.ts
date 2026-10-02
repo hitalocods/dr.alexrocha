@@ -60,7 +60,7 @@ export interface BusinessDayHours {
 export interface ClinicSettings {
   show_prices_publicly: boolean;
   clinic_name: string;
-  clinic_phone: string; // WhatsApp: 5586988664485
+  clinic_phone: string; // WhatsApp: 5586988003223
   clinic_address: string;
   default_slots: string[];
 }
