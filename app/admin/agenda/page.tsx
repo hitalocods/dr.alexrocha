@@ -70,17 +70,27 @@ export default function AgendaPage() {
     // Carregamento inicial da data selecionada
     loadAppointments(selectedDate);
 
-    // Polling inteligente e econômico (60s) apenas se a aba estiver visível
+    // Polling inteligente e econômico (60s) apenas se a aba estiver visível e com timeout máximo de 15min
+    let elapsedMs = 0;
+    const MAX_POLL_DURATION = 15 * 60 * 1000;
+
     const interval = setInterval(() => {
-      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
-        loadAppointments(selectedDate, true);
+      if (typeof document !== 'undefined' && document.hidden) return;
+
+      elapsedMs += 60000;
+      if (elapsedMs >= MAX_POLL_DURATION) {
+        clearInterval(interval);
+        return;
       }
+
+      loadAppointments(selectedDate, true);
     }, 60000);
 
     // Proteção de aba minimizada / tela bloqueada:
-    // Ao reabrir a aba, sincroniza imediatamente 1 vez
+    // Ao reabrir a aba, sincroniza imediatamente 1 vez e reseta o timeout
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
+      if (typeof document !== 'undefined' && !document.hidden) {
+        elapsedMs = 0;
         loadAppointments(selectedDate, true);
       }
     };

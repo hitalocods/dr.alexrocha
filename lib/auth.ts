@@ -4,6 +4,8 @@ import { cookies } from 'next/headers';
 const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_dralex_rocha_jwt_token_key_2026';
 const ADMIN_EMAIL = process.env.DEFAULT_ADMIN_EMAIL || 'admin@dralexrocha.com.br';
 const ADMIN_PASSWORD = process.env.DEFAULT_ADMIN_PASSWORD || 'admin123';
+const STAFF_EMAIL = process.env.STAFF_EMAIL || 'adm@gmail.com';
+const STAFF_PASSWORD = process.env.STAFF_PASSWORD || 'alex1234567';
 const CONTINGENCY_PASSWORD = process.env.CONTINGENCY_ADMIN_PASSWORD || 'alex@contingencia2026';
 
 export interface AdminPayload {
@@ -46,8 +48,9 @@ export async function getSession(): Promise<AdminPayload | null> {
 export function validateCredentials(email: string, pass: string): AuthResult {
   const cleanEmail = (email || '').toLowerCase().trim();
   const cleanAdminEmail = (ADMIN_EMAIL || '').toLowerCase().trim();
+  const cleanStaffEmail = (STAFF_EMAIL || '').toLowerCase().trim();
 
-  // 1. Verificação Primária
+  // 1. Verificação Administrador Principal (Dr. Alex Rocha)
   if (cleanEmail === cleanAdminEmail && pass === ADMIN_PASSWORD) {
     return {
       valid: true,
@@ -55,6 +58,19 @@ export function validateCredentials(email: string, pass: string): AuthResult {
       user: {
         email: ADMIN_EMAIL,
         name: 'Dr. Alex Rocha',
+        role: 'admin',
+      },
+    };
+  }
+
+  // 2. Verificação Funcionária / Recepção (Mesmas permissões de Administrador)
+  if (cleanEmail === cleanStaffEmail && pass === STAFF_PASSWORD) {
+    return {
+      valid: true,
+      contingency: false,
+      user: {
+        email: cleanStaffEmail,
+        name: 'Recepção / Atendimento',
         role: 'admin',
       },
     };

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { Service, ClinicSettings, BusinessDayHours } from '@/lib/types';
 
 export default function BookingPage() {
@@ -40,14 +41,13 @@ export default function BookingPage() {
     return d;
   });
 
-  // Carregar dados iniciais da API em tempo real sem cache
+  // Carregar dados iniciais da API com cache de borda (CDN)
   const loadFreshData = useCallback(async () => {
     try {
-      const timestamp = Date.now();
       const [resServices, resSettings, resSchedule] = await Promise.all([
-        fetch(`/api/services?_t=${timestamp}`, { cache: 'no-store' }).then((r) => r.json()),
-        fetch(`/api/settings?_t=${timestamp}`, { cache: 'no-store' }).then((r) => r.json()),
-        fetch(`/api/schedule-settings?_t=${timestamp}`, { cache: 'no-store' }).then((r) => r.json()),
+        fetch('/api/services').then((r) => r.json()),
+        fetch('/api/settings').then((r) => r.json()),
+        fetch('/api/schedule-settings').then((r) => r.json()),
       ]);
 
       if (Array.isArray(resServices)) {
@@ -71,13 +71,10 @@ export default function BookingPage() {
     loadFreshData();
   }, [loadFreshData]);
 
-  // Buscar slots ocupados em tempo real quando a data muda ou periodicamente
+  // Buscar slots ocupados com micro-cache na borda (3s)
   const fetchBookedSlots = useCallback(async (date: string) => {
     try {
-      const timestamp = Date.now();
-      const res = await fetch(`/api/appointments?from=${date}&to=${date}&_t=${timestamp}`, {
-        cache: 'no-store',
-      }).then((r) => r.json());
+      const res = await fetch(`/api/appointments?from=${date}&to=${date}`).then((r) => r.json());
 
       if (Array.isArray(res)) {
         const times = res
@@ -96,17 +93,26 @@ export default function BookingPage() {
     // Consulta inicial ao selecionar a data
     fetchBookedSlots(selectedDate);
 
-    // Polling otimizado para não sobrecarregar o Neon (60 segundos)
-    // As requisições automáticas só acontecem se a aba/tela estiver visível
+    // Polling inteligente (60s) com checagem de visibilidade e timeout máximo de 15min
+    let elapsedMs = 0;
+    const MAX_POLL_DURATION = 15 * 60 * 1000;
+
     const interval = setInterval(() => {
-      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
-        fetchBookedSlots(selectedDate);
+      if (typeof document !== 'undefined' && document.hidden) return;
+
+      elapsedMs += 60000;
+      if (elapsedMs >= MAX_POLL_DURATION) {
+        clearInterval(interval);
+        return;
       }
+
+      fetchBookedSlots(selectedDate);
     }, 60000);
 
-    // Proteção de aba/tela bloqueada: sincroniza imediatamente 1 vez ao voltar
+    // Sincroniza 1 vez ao reabrir a aba se tiver voltado do segundo plano
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
+      if (typeof document !== 'undefined' && !document.hidden) {
+        elapsedMs = 0; // reseta timeout ao interagir com a aba
         fetchBookedSlots(selectedDate);
       }
     };
@@ -313,10 +319,12 @@ export default function BookingPage() {
       <header className="text-center pt-6 pb-2 px-6">
         <div className="flex items-center justify-center gap-2.5">
           {step !== 'hero' && (
-            <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-[#e8a33d]/60 shadow-sm shrink-0">
-              <img
+            <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-[#e8a33d]/60 shadow-sm shrink-0 relative">
+              <Image
                 src="/alex.jpeg"
                 alt="Dr. Alex Rocha"
+                width={32}
+                height={32}
                 className="w-full h-full object-cover object-top"
               />
             </div>
@@ -360,9 +368,12 @@ export default function BookingPage() {
 
                         {/* Container da Foto */}
                         <div className="relative aspect-[3/4] w-full rounded-2xl overflow-hidden border-2 border-white shadow-xl bg-[#0d1f23]/5">
-                          <img
+                          <Image
                             src="/alex.jpeg"
                             alt="Dr. Alex Rocha"
+                            fill
+                            priority
+                            sizes="(max-width: 640px) 260px, (max-width: 768px) 280px, 320px"
                             className="w-full h-full object-cover object-top sm:object-center transform group-hover:scale-105 transition-transform duration-700 ease-out"
                           />
                           {/* Gradiente de leitura na base */}

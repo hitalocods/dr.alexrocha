@@ -5,7 +5,11 @@ import { getSession } from '@/lib/auth';
 export async function GET() {
   try {
     const dates = await db.getBlockedDates();
-    return NextResponse.json(dates);
+    return NextResponse.json(dates, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+      },
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

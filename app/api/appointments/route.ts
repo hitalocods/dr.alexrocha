@@ -1,9 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -14,7 +11,7 @@ export async function GET(request: Request) {
     const appointments = await db.getAppointments({ from, to, status });
     return NextResponse.json(appointments, {
       headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Cache-Control': 'public, s-maxage=3, stale-while-revalidate=10',
       },
     });
   } catch (error: any) {
